@@ -111,7 +111,9 @@ def check_detect(b_frame, detect_rect):
     window = b_frame[detect_rect.y : detect_rect.y + detect_rect.h, detect_rect.x : detect_rect.x + detect_rect.w]
     #check change ratio of binary values
     ratio = np.mean(window) / 255
-    if ratio > 0.1:
+
+    # change ratio below
+    if ratio > 0.001:
         return True, ratio
     return False, ratio
 
@@ -121,6 +123,7 @@ def detector(cap, detect_rect):
     crt_frame = False
     before_frame = False
     after_frame = False
+    diff_bf_frame = False
     detect_count = 0
 
     while True:
@@ -129,27 +132,30 @@ def detector(cap, detect_rect):
 
         if prev_frame is not None:
             diff_frame = cv2.absdiff(crt_frame, prev_frame)
-            _, diff_b_frame = cv2.threshold(diff_frame, 50, 255, cv2.THRESH_BINARY)
+
+            # change threshold below
+            _, diff_b_frame = cv2.threshold(diff_frame, 70, 255, cv2.THRESH_BINARY)
             cv2.imshow('processing preview', diff_b_frame)
             detect, retio = check_detect(diff_b_frame, detect_rect)
 
-        if detect:
+        if detect is True:
             detect_count = 0
         else:
             detect_count += 1
 
         if detect_count == 5:
-            if before_frame is not None:
-                after_frame  = crt_frame
-            else:
-                before_frame = crt_frame
-
-        if before_frame is not None and after_frame is not None:
-            diff_bf_frame = cv2.absdiff(before_frame, after_frame)
+            if before_frame is False:
+                before_frame  = crt_frame
+            elif before_frame is not False:
+                after_frame = crt_frame
 
         if detect_count >= 10:
-            cv2.destroyAllWindows()
-            return diff_bf_frame
+            if before_frame is not False and after_frame is not False:
+                diff_bf_frame = cv2.absdiff(before_frame, after_frame)
+
+            if diff_bf_frame is not False:
+                cv2.destroyAllWindows()
+                return diff_bf_frame, before_frame, after_frame
 
         # display frame
         cv2.imshow('camera preview', crt_frame)
@@ -174,7 +180,7 @@ def start_motion_detector(device_id = DEVICE_ID):
     # set detect area
     detect_rect, initial_img = configure_detect_rectangle(cap)
     # pole for detect
-    detect_img = detector(cap, detect_rect)
+    detect_img, before_img, after_img = detector(cap, detect_rect)
     # release camera device
     cap.release()
     # save image
@@ -186,6 +192,11 @@ def start_motion_detector(device_id = DEVICE_ID):
         save_image('./save', '2_detect_image_with_rect.png', detect_img)
         # notify to user
         # by mail / slack (for exmaple)
+    if before_img is not None:
+        save_image('./save', '1_before_image.png', before_img)
+
+    if after_img is not None:
+        save_image('./save', '1_after_image.png', after_img)
 
 if __name__ == '__main__':
     print('start motion detector')
