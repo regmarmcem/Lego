@@ -8,7 +8,7 @@ from IPython import embed
 from IPython.terminal.embed import InteractiveShellEmbed
 
 
-DEVICE_ID = 0
+DEVICE_ID = 1
 DEFAULT_SIZE = (1600, 1200)
 FLIP = True
 
