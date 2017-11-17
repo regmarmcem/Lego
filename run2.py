@@ -129,13 +129,14 @@ def detector(cap, detect_rect):
     while True:
         start = time.time()
         crt_frame = get_gray_frame(cap)
+        color_frame = get_frame(cap)
 
         if prev_frame is not None:
             diff_frame = cv2.absdiff(crt_frame, prev_frame)
 
             # change threshold below
             _, diff_b_frame = cv2.threshold(diff_frame, 70, 255, cv2.THRESH_BINARY)
-            cv2.imshow('processing preview', diff_b_frame)
+            cv2.imshow('processing preview', color_frame)
             detect, retio = check_detect(diff_b_frame, detect_rect)
 
         if detect is True:
@@ -146,8 +147,10 @@ def detector(cap, detect_rect):
         if detect_count == 5:
             if before_frame is False:
                 before_frame  = crt_frame
+                before_color_frame = color_frame
             elif before_frame is not False:
                 after_frame = crt_frame
+                after_color_frame = color_frame
 
         if detect_count >= 10:
             if before_frame is not False and after_frame is not False:
@@ -155,7 +158,7 @@ def detector(cap, detect_rect):
 
             if diff_bf_frame is not False:
                 cv2.destroyAllWindows()
-                return diff_bf_frame, before_frame, after_frame
+                return diff_bf_frame, before_color_frame, after_color_frame
 
         # display frame
         cv2.imshow('camera preview', crt_frame)
